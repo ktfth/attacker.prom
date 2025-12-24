@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "a62233897cd00449",
+        "id": "c4502649f502acc1",
         "type": "tabs",
         "children": [
           {
-            "id": "43f2310e5e50f019",
+            "id": "30b178f4784c5c31",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "sniper/Prompt_Rastreamento_Sniper.md",
+                "file": "artesanal/Evidências 01.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Prompt_Rastreamento_Sniper"
+              "title": "Evidências 01"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "sniper/Prompt_Rastreamento_Sniper.md",
+                "file": "artesanal/Evidências 01.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Links inversos para Prompt_Rastreamento_Sniper"
+              "title": "Links inversos para Evidências 01"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "sniper/Prompt_Rastreamento_Sniper.md",
+                "file": "artesanal/Evidências 01.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Links de saída para Prompt_Rastreamento_Sniper"
+              "title": "Links de saída para Evidências 01"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "sniper/Prompt_Rastreamento_Sniper.md",
+                "file": "artesanal/Evidências 01.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Sumário de Prompt_Rastreamento_Sniper"
+              "title": "Sumário de Evidências 01"
             }
           }
         ]
@@ -183,25 +183,45 @@
       "bases:Criar nova base": false
     }
   },
-  "active": "43f2310e5e50f019",
+  "active": "30b178f4784c5c31",
   "lastOpenFiles": [
-    "experimentos/ataque-exemplificado-01.md",
-    "exemplos/Dossie_Reino_Dos_Oculos.md",
-    "04_Prompt_Auditor_Receita.md",
-    "03_Protocolo_Sniper.md",
-    "02_Modelos_De_Negocio_Killer.md",
-    "01_Playbook_Mestre_Auditoria.md",
-    "Automação do agente.md",
-    "sniper/Prompt_Rastreamento_Sniper.md",
-    "sniper",
-    "contratos/Contrato_Intervencao_Sniper.md",
-    "contratos",
-    "exemplos",
-    "experimentos",
-    "Protocolo_Sniper.md",
-    "Modelos_De_Negocio_Killer.md",
-    "Playbook_Mestre_Auditoria.md",
-    "Prompt_Auditor_Receita.md",
-    "Playbook_Ostensivo.md"
+    "agentes/list_models.ts",
+    "agentes/bun.lock",
+    "agentes/node_modules/is-any-array/src/__tests__/test.ts",
+    "agentes/node_modules/is-any-array/src/index.ts",
+    "agentes/node_modules/is-any-array/src/__tests__",
+    "agentes/node_modules/is-any-array/lib-esm/index.js.map",
+    "agentes/node_modules/is-any-array/lib-esm/index.js",
+    "agentes/node_modules/is-any-array/lib-esm/index.d.ts.map",
+    "agentes/node_modules/is-any-array/lib-esm/index.d.ts",
+    "agentes/node_modules/is-any-array/lib/index.js.map",
+    "agentes/node_modules/is-any-array/lib/index.js",
+    "agentes/node_modules/is-any-array/README.md",
+    "agentes/node_modules/p-finally/readme.md",
+    "agentes/node_modules/num-sort/readme.md",
+    "agentes/node_modules/binary-search/README.md",
+    "agentes/node_modules/ml-array-sum/README.md",
+    "agentes/node_modules/retry/README.md",
+    "agentes/node_modules/@types/retry/README.md",
+    "agentes/node_modules/p-timeout/readme.md",
+    "agentes/node_modules/eventemitter3/README.md",
+    "agentes/node_modules/ml-tree-similarity/README.md",
+    "agentes/node_modules/ml-tree-similarity/History.md",
+    "agentes/node_modules/ml-distance-euclidean/README.md",
+    "agentes/node_modules/ml-distance-euclidean/History.md",
+    "agentes/node_modules/ml-array-mean/README.md",
+    "agentes/node_modules/semver/README.md",
+    "agentes/node_modules/commander/Readme.md",
+    "agentes/node_modules/@types/uuid/README.md",
+    "agentes/node_modules/base64-js/README.md",
+    "agentes/node_modules/@google/generative-ai/README.md",
+    "agentes/node_modules/zod-to-json-schema/dist-test-v4/types/node_modules/zod/README.md",
+    "agentes/node_modules/zod-to-json-schema/dist-test-v4/esm/node_modules/zod/README.md",
+    "agentes/node_modules/zod-to-json-schema/dist-test-v4/cjs/node_modules/zod/README.md",
+    "agentes/node_modules/zod-to-json-schema/dist-test-v3/types/node_modules/zod/README.md",
+    "agentes/node_modules/zod-to-json-schema/dist-test-v3/esm/node_modules/zod/README.md",
+    "agentes/node_modules/zod-to-json-schema/dist-test-v3/cjs/node_modules/zod/README.md",
+    "Pasted image 20251224183733.png",
+    "Pasted image 20251224183712.png"
   ]
 }
