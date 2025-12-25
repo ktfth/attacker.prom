@@ -1,20 +1,32 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage } from "@langchain/core/messages";
-import { AgentState, AnalysisError } from "./types";
+import { AgentState, AnalysisError, FormattedPlace } from "./types";
 import { SearchService } from "./search.service";
+import { TargetScoring, TargetScore } from "./scoring";
+import { PromptTemplates } from "./prompts";
+
+/**
+ * Estado estendido para passar dados entre nós
+ */
+interface ExtendedAgentState extends AgentState {
+  top_targets?: TargetScore[];
+  selected_score?: TargetScore;
+}
 
 /**
  * Cria o nó de pesquisa (research)
+ * Responsável por buscar dados reais e fazer scoring inicial
  */
 export function createResearchNode(searchService: SearchService) {
-  return async (state: AgentState): Promise<Partial<AgentState>> => {
+  return async (
+    state: ExtendedAgentState
+  ): Promise<Partial<ExtendedAgentState>> => {
     console.log(
       `\n🔍 [SNIPER] Rastreando o Google Maps Real para: "${state.query}"...`
     );
 
     try {
       const formattedData = await searchService.searchAndFormat(state.query);
-
       const parsedData = JSON.parse(formattedData);
 
       if (parsedData.message) {
@@ -30,8 +42,32 @@ export function createResearchNode(searchService: SearchService) {
         };
       }
 
-      console.log(`✅ [SNIPER] Encontrados ${parsedData.length} alvos reais.`);
-      return { real_data: formattedData };
+      const places: FormattedPlace[] = parsedData;
+
+      // Fazer scoring de todos os alvos
+      console.log(`📊 [SNIPER] Analisando e pontuando ${places.length} alvos...`);
+      const topTargets = TargetScoring.getTopTargets(places, 5);
+
+      // Exibir resumo dos top alvos
+      console.log(`\n🎯 TOP 5 ALVOS IDENTIFICADOS:\n`);
+      topTargets.forEach((target, idx) => {
+        console.log(
+          `${idx + 1}. ${target.place.title} - Score: ${target.score}/100 (${target.priority})`
+        );
+        console.log(
+          `   💰 Perda Mensal: R$ ${target.estimatedMonthlyLoss.toLocaleString("pt-BR")}`
+        );
+        console.log(
+          `   🚨 Problemas: ${target.issues.map((i) => i.type).join(", ")}\n`
+        );
+      });
+
+      console.log(`✅ [SNIPER] Scoring concluído. Passando para análise LLM...\n`);
+
+      return {
+        real_data: formattedData,
+        top_targets: topTargets,
+      };
     } catch (error) {
       console.error(
         `❌ Erro na pesquisa: ${
@@ -55,10 +91,13 @@ export function createResearchNode(searchService: SearchService) {
 
 /**
  * Cria o nó de análise (analyze)
+ * Usa LLM + scoring para selecionar o melhor alvo
  */
 export function createAnalysisNode(model: ChatGoogleGenerativeAI) {
-  return async (state: AgentState): Promise<Partial<AgentState>> => {
-    console.log(`\n🎯 [SNIPER] Analisando a Kill List...`);
+  return async (
+    state: ExtendedAgentState
+  ): Promise<Partial<ExtendedAgentState>> => {
+    console.log(`\n🎯 [SNIPER] Análise LLM + Scoring Híbrido...`);
 
     // Verificar se há dados válidos
     try {
@@ -70,35 +109,50 @@ export function createAnalysisNode(model: ChatGoogleGenerativeAI) {
       }
     } catch {
       return {
-        selected_target:
-          "ERRO: Dados de pesquisa inválidos ou corrompidos.",
+        selected_target: "ERRO: Dados de pesquisa inválidos ou corrompidos.",
       };
     }
 
-    const prompt = `
-      Analise estes DADOS REAIS extraídos do Google Maps:
+    // Verificar se temos top_targets do scoring
+    if (!state.top_targets || state.top_targets.length === 0) {
+      return {
+        selected_target: PromptTemplates.getNoDataPrompt(),
+      };
+    }
 
-      ${state.real_data}
-
-      Sua missão é selecionar A VÍTIMA PERFEITA para uma abordagem de venda de "Correção de Sistema".
-
-      Critérios de Seleção (Ordem de Prioridade):
-      1. **Falta de Site:** Se o campo 'website' diz "NÃO POSSUI SITE", é prioridade máxima.
-      2. **Avaliação Baixa:** Rating abaixo de 4.0 indica clientes insatisfeitos (oportunidade de gestão de reputação).
-      3. **Poucos Reviews:** Indica que o negócio é "fantasma" digital.
-
-      Escolha UM alvo.
-
-      Retorne apenas:
-      - Nome do Negócio:
-      - O Erro Técnico Real:
-      - Por que atacar este alvo:
-    `;
+    // Usar o prompt otimizado
+    const prompt = PromptTemplates.getAnalysisPrompt(
+      state.real_data,
+      state.top_targets
+    );
 
     try {
       const response = await model.invoke([new HumanMessage(prompt)]);
-      console.log(`✅ [SNIPER] Alvo selecionado.`);
-      return { selected_target: response.content as string };
+      const selectedText = response.content as string;
+
+      // Tentar identificar qual alvo foi selecionado para passar o score
+      let selectedScore: TargetScore | undefined;
+      for (const target of state.top_targets) {
+        if (selectedText.includes(target.place.title)) {
+          selectedScore = target;
+          break;
+        }
+      }
+
+      console.log(`✅ [SNIPER] Alvo final selecionado pelo LLM.`);
+      if (selectedScore) {
+        console.log(
+          `   📌 ${selectedScore.place.title} (Score: ${selectedScore.score}/100)`
+        );
+        console.log(
+          `   💰 Impacto: R$ ${selectedScore.estimatedMonthlyLoss.toLocaleString("pt-BR")}/mês`
+        );
+      }
+
+      return {
+        selected_target: selectedText,
+        selected_score: selectedScore,
+      };
     } catch (error) {
       throw new AnalysisError(
         `Falha ao analisar dados: ${
@@ -112,10 +166,13 @@ export function createAnalysisNode(model: ChatGoogleGenerativeAI) {
 
 /**
  * Cria o nó de geração de dossiê (write_dossier)
+ * Gera relatório detalhado e acionável
  */
 export function createDossierNode(model: ChatGoogleGenerativeAI) {
-  return async (state: AgentState): Promise<Partial<AgentState>> => {
-    console.log(`\n📝 [SNIPER] Gerando Munição de Guerra...`);
+  return async (
+    state: ExtendedAgentState
+  ): Promise<Partial<ExtendedAgentState>> => {
+    console.log(`\n📝 [SNIPER] Gerando Dossiê Completo...`);
 
     // Verificar se há um alvo válido
     if (state.selected_target.startsWith("ERRO:")) {
@@ -124,35 +181,45 @@ export function createDossierNode(model: ChatGoogleGenerativeAI) {
       };
     }
 
-    const prompt = `
-      Atue como um Auditor de Eficiência (Protocolo Sniper).
+    // Escolher prompt personalizado se tivermos o score
+    let prompt: string;
 
-      ALVO REAL SELECIONADO:
-      ${state.selected_target}
+    if (state.selected_score) {
+      // Identificar problema dominante
+      const dominantIssue =
+        state.selected_score.issues.length > 0
+          ? state.selected_score.issues[0].type
+          : "NO_WEBSITE";
 
-      Gere um DOSSIÊ DE INTERVENÇÃO para enviar ao dono agora.
+      prompt = PromptTemplates.getPersonalizedDossierPrompt(
+        dominantIssue,
+        state.selected_score
+      );
 
-      Estrutura Obrigatória (Markdown):
-
-      ## 1. O Diagnóstico (A Agulhada)
-      Cite o erro real encontrado (ex: "Vi no Maps que vocês não têm site linkado").
-      Use linguagem técnica: "Filtro de Expulsão", "Atrito Digital".
-
-      ## 2. A Matemática da Perda
-      Faça uma estimativa conservadora de quantos clientes eles perdem por mês por esse erro.
-      (Ticket Médio estimado do nicho * 1 cliente perdido a cada 2 dias).
-
-      ## 3. O Script WhatsApp (Para Copiar e Colar)
-      Curto, direto, sem "bom dia". Focado no erro.
-
-      ## 4. A Solução Sniper
-      Micro-consultoria de 48h para corrigir ESSE erro específico.
-    `;
+      console.log(
+        `   🎯 Usando template personalizado para: ${dominantIssue}`
+      );
+    } else {
+      // Fallback para prompt genérico
+      prompt = PromptTemplates.getDossierPrompt(state.selected_target);
+    }
 
     try {
       const response = await model.invoke([new HumanMessage(prompt)]);
       console.log(`✅ [SNIPER] Dossiê gerado com sucesso.`);
-      return { final_dossier: response.content as string };
+
+      // Adicionar footer com metadados
+      const footer = `\n\n---\n\n**Metadados da Análise:**
+- Query: "${state.query}"
+- Alvos Analisados: ${state.top_targets?.length || "N/A"}
+- Score do Alvo: ${state.selected_score?.score || "N/A"}/100
+- Prioridade: ${state.selected_score?.priority || "N/A"}
+- Data: ${new Date().toLocaleDateString("pt-BR")}
+`;
+
+      return {
+        final_dossier: (response.content as string) + footer,
+      };
     } catch (error) {
       throw new AnalysisError(
         `Falha ao gerar dossiê: ${

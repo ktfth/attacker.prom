@@ -39,6 +39,8 @@ export interface AgentState {
   real_data: string;
   selected_target: string;
   final_dossier: string;
+  top_targets?: any[]; // TargetScore[] - any para evitar dependência circular
+  selected_score?: any; // TargetScore
 }
 
 // --- Configuração ---

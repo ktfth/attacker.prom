@@ -1,7 +1,7 @@
 {
   "name": "sniper-agent",
-  "version": "2.0.0",
-  "description": "Sistema autônomo de análise de oportunidades baseado em LangGraph",
+  "version": "2.1.0",
+  "description": "Sistema autônomo de análise de oportunidades com scoring inteligente e prompts otimizados",
   "main": "agent.ts",
   "type": "module",
   "scripts": {

@@ -2,6 +2,53 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [2.1.0] - 2025-12-25
+
+### 🚀 Melhorias no Modelo de Atuação
+
+Implementação de sistema de scoring avançado e prompts otimizados para análises mais precisas e acionáveis.
+
+### ✨ Adicionado
+
+- **Sistema de Scoring Inteligente** (`scoring.ts`):
+  - Pontuação objetiva de alvos (0-100 pontos)
+  - 5 critérios de avaliação (Website, Telefone, Rating, Reviews, Info)
+  - Classificação automática de prioridade (CRÍTICA/ALTA/MÉDIA/BAIXA)
+  - Cálculo de receita cessante mensal baseado em nicho
+  - Database de ticket médio para 20+ categorias de negócio
+  - Identificação detalhada de problemas com severidade
+
+- **Templates de Prompts Profissionais** (`prompts.ts`):
+  - Prompt otimizado para análise híbrida (AI + Scoring)
+  - Prompt personalizado por tipo de problema (NO_WEBSITE, LOW_RATING, FEW_REVIEWS)
+  - Templates estruturados de dossiê com seções obrigatórias
+  - Scripts de abordagem WhatsApp prontos para uso
+  - Estimativas financeiras conservadoras e realistas
+
+- **Análise Híbrida**:
+  - Fase 1: Scoring algorítmico de todos os alvos
+  - Fase 2: LLM seleciona entre top 5 com contexto
+  - Output mostra TOP 5 alvos antes da seleção final
+  - Metadados inclusos no dossiê final
+
+### 🔄 Modificado
+
+- **nodes.ts**: Completamente refatorado para análise híbrida
+- **types.ts**: Adicionado `top_targets` e `selected_score`
+- **agent.ts**: State channels atualizados
+- **README.md**: Expandido com seção de funcionalidades avançadas
+
+### 🎯 Impacto
+
+**Qualidade dos Dossiês:**
+- ✅ Cálculo financeiro preciso por nicho
+- ✅ Prompts personalizados por tipo de problema
+- ✅ Top 5 alvos visíveis para validação
+- ✅ Scripts prontos para uso
+- ✅ Metadados completos
+
+**Database:** 20+ categorias com tickets médios mapeados
+
 ## [2.0.0] - 2025-12-25
 
 ### 🎉 Melhorias Principais

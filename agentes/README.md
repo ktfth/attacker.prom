@@ -15,9 +15,47 @@ O agente utiliza uma arquitetura modular com três nós principais:
 
 ### Componentes
 
-1. **Research Node**: Busca dados reais via API Serper.dev (Google Maps)
-2. **Analysis Node**: Analisa os dados usando Gemini AI
-3. **Dossier Node**: Gera relatório estruturado em Markdown
+1. **Research Node**: Busca dados reais via API Serper.dev (Google Maps) + Sistema de Scoring
+2. **Analysis Node**: Análise Híbrida (Scoring Algorítmico + Gemini AI)
+3. **Dossier Node**: Gera relatório estruturado em Markdown com templates personalizados
+
+## 🎯 Funcionalidades Avançadas
+
+### Sistema de Scoring Inteligente
+
+O agente utiliza um **sistema de pontuação objetiva** para avaliar alvos:
+
+**Critérios de Pontuação (0-100 pontos):**
+- ❌ **Sem Website**: 40 pontos (problema CRÍTICO)
+- 📱 **Sem Telefone**: 15 pontos
+- ⭐ **Rating Baixo**: 20-30 pontos (dependendo da gravidade)
+- 📝 **Poucos Reviews**: 15-25 pontos (< 30 reviews)
+- ℹ️ **Info Incompleta**: 10 pontos
+
+**Prioridades Automáticas:**
+- 🔴 **CRÍTICA**: Score ≥ 60 (ação urgente)
+- 🟠 **ALTA**: Score 40-59 (importante)
+- 🟡 **MÉDIA**: Score 20-39 (atenção)
+- 🟢 **BAIXA**: Score < 20 (monitorar)
+
+### Cálculo de Receita Cessante
+
+O agente estima **perdas financeiras mensais** baseado em:
+
+1. **Ticket Médio por Nicho** (database com 20+ categorias)
+2. **Gravidade dos Problemas** (algoritmo proprietário)
+3. **Volume de Clientes Perdidos** (estimativa conservadora)
+
+**Fórmula:**
+```
+Perda Mensal = Σ(Clientes Perdidos/Dia × Ticket Médio × 30 dias)
+```
+
+### Análise Híbrida (AI + Algoritmo)
+
+- **Fase 1**: Algoritmo pontua objetivamente todos os alvos
+- **Fase 2**: LLM (Gemini) escolhe entre top 5 baseado em contexto
+- **Resultado**: Decisão otimizada (precisão + nuance)
 
 ## 🚀 Instalação
 
@@ -82,13 +120,21 @@ agentes/
 ├── config.ts             # Gerenciamento de configuração
 ├── types.ts              # Tipos TypeScript e schemas Zod
 ├── search.service.ts     # Serviço de busca (Serper API)
-├── nodes.ts              # Nós do grafo LangGraph
+├── scoring.ts            # ⭐ Sistema de pontuação de alvos
+├── prompts.ts            # ⭐ Templates de prompts otimizados
+├── nodes.ts              # Nós do grafo LangGraph (refatorado)
+├── validate.ts           # Script de validação de ambiente
 ├── list_models.ts        # Utilitário para listar modelos
 ├── package.json          # Dependências
 ├── .env.example          # Template de configuração
 ├── .env                  # Configuração (não versionado)
-└── README.md             # Esta documentação
+├── README.md             # Esta documentação
+└── CHANGELOG.md          # Histórico de versões
 ```
+
+**Novos Módulos (⭐):**
+- `scoring.ts`: Sistema de scoring com 5 critérios + cálculo de receita cessante
+- `prompts.ts`: Templates profissionais personalizados por tipo de problema
 
 ## 🔧 Arquitetura Técnica
 

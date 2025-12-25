@@ -51,6 +51,8 @@ async function main() {
         real_data: { value: (x: string, y: string) => y ?? x },
         selected_target: { value: (x: string, y: string) => y ?? x },
         final_dossier: { value: (x: string, y: string) => y ?? x },
+        top_targets: { value: (x: any, y: any) => y ?? x },
+        selected_score: { value: (x: any, y: any) => y ?? x },
       },
     });
 
