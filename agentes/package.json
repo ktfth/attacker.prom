@@ -1,11 +1,25 @@
 {
   "name": "sniper-agent",
-  "version": "1.0.0",
-  "description": "Agente autônomo de auditoria de receita cessante",
+  "version": "2.1.0",
+  "description": "Sistema autônomo de análise de oportunidades com scoring inteligente e prompts otimizados",
   "main": "agent.ts",
+  "type": "module",
   "scripts": {
-    "start": "bun run agent.ts"
+    "start": "bun run agent.ts",
+    "dev": "bun run --watch agent.ts",
+    "list-models": "bun run list_models.ts",
+    "validate": "bun run validate.ts",
+    "check": "bun run --check agent.ts"
   },
+  "keywords": [
+    "langgraph",
+    "langchain",
+    "gemini",
+    "ai-agent",
+    "business-intelligence"
+  ],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
     "@langchain/core": "^0.1.58",
     "@langchain/google-genai": "^0.0.11",
@@ -16,5 +30,8 @@
   "devDependencies": {
     "@types/node": "^20.12.7",
     "bun-types": "latest"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
   }
 }
