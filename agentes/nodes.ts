@@ -1,4 +1,4 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { HumanMessage } from "@langchain/core/messages";
 import { AgentState, AnalysisError, FormattedPlace } from "./types";
 import { SearchService } from "./search.service";
@@ -93,7 +93,7 @@ export function createResearchNode(searchService: SearchService) {
  * Cria o nó de análise (analyze)
  * Usa LLM + scoring para selecionar o melhor alvo
  */
-export function createAnalysisNode(model: ChatGoogleGenerativeAI) {
+export function createAnalysisNode(model: BaseChatModel) {
   return async (
     state: ExtendedAgentState
   ): Promise<Partial<ExtendedAgentState>> => {
@@ -168,7 +168,7 @@ export function createAnalysisNode(model: ChatGoogleGenerativeAI) {
  * Cria o nó de geração de dossiê (write_dossier)
  * Gera relatório detalhado e acionável
  */
-export function createDossierNode(model: ChatGoogleGenerativeAI) {
+export function createDossierNode(model: BaseChatModel) {
   return async (
     state: ExtendedAgentState
   ): Promise<Partial<ExtendedAgentState>> => {

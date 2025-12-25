@@ -63,8 +63,10 @@ Perda Mensal = Σ(Clientes Perdidos/Dia × Ticket Médio × 30 dias)
 
 - [Bun](https://bun.sh/) >= 1.0
 - Chaves de API:
-  - [Google Gemini API](https://makersuite.google.com/app/apikey)
-  - [Serper.dev API](https://serper.dev/)
+  - [Serper.dev API](https://serper.dev/) (obrigatória)
+  - **Escolha um provedor de LLM:**
+    - [Google Gemini API](https://makersuite.google.com/app/apikey) (padrão)
+    - [OpenRouter API](https://openrouter.ai/) (suporta Claude, GPT-4, Llama, etc.)
 
 ### Setup
 
@@ -81,15 +83,44 @@ cp .env.example .env
 
 Edite o arquivo `.env`:
 
+### Opção 1: Google Gemini (Padrão)
+
 ```env
 # Obrigatórias
-GOOGLE_API_KEY="sua-chave-do-gemini"
 SERPER_API_KEY="sua-chave-do-serper"
+GOOGLE_API_KEY="sua-chave-do-gemini"
 
-# Opcionais
-MODEL_NAME="gemini-2.0-flash"    # Modelo Gemini a usar
+# Provedor (opcional, padrão: google)
+LLM_PROVIDER="google"
+
+# Configurações do Modelo
+MODEL_NAME="gemini-2.0-flash"    # Opções: gemini-2.0-flash, gemini-pro, gemini-1.5-flash
 TEMPERATURE="0.5"                # Temperatura (0.0-1.0)
 ```
+
+### Opção 2: OpenRouter (Acesso a Claude, GPT-4, Llama, etc.)
+
+```env
+# Obrigatórias
+SERPER_API_KEY="sua-chave-do-serper"
+OPENROUTER_API_KEY="sua-chave-do-openrouter"
+
+# Provedor
+LLM_PROVIDER="openrouter"
+
+# Configurações do Modelo
+MODEL_NAME="anthropic/claude-3.5-sonnet"  # Opções: anthropic/claude-3.5-sonnet, openai/gpt-4, meta-llama/llama-3.1-70b
+TEMPERATURE="0.5"                          # Temperatura (0.0-1.0)
+```
+
+**Modelos populares no OpenRouter:**
+- `anthropic/claude-3.5-sonnet` - Claude 3.5 Sonnet (recomendado para análises complexas)
+- `openai/gpt-4` - GPT-4
+- `openai/gpt-4-turbo` - GPT-4 Turbo
+- `meta-llama/llama-3.1-70b` - Llama 3.1 70B
+- `google/gemini-pro` - Gemini Pro via OpenRouter
+
+Veja todos os modelos disponíveis em: https://openrouter.ai/models
 
 ## 🎯 Uso
 
@@ -119,9 +150,10 @@ agentes/
 ├── agent.ts              # Ponto de entrada principal
 ├── config.ts             # Gerenciamento de configuração
 ├── types.ts              # Tipos TypeScript e schemas Zod
+├── llm-provider.ts       # ⭐ Factory de provedores LLM (Google/OpenRouter)
 ├── search.service.ts     # Serviço de busca (Serper API)
-├── scoring.ts            # ⭐ Sistema de pontuação de alvos
-├── prompts.ts            # ⭐ Templates de prompts otimizados
+├── scoring.ts            # Sistema de pontuação de alvos
+├── prompts.ts            # Templates de prompts otimizados
 ├── nodes.ts              # Nós do grafo LangGraph (refatorado)
 ├── validate.ts           # Script de validação de ambiente
 ├── list_models.ts        # Utilitário para listar modelos
@@ -132,7 +164,8 @@ agentes/
 └── CHANGELOG.md          # Histórico de versões
 ```
 
-**Novos Módulos (⭐):**
+**Módulos Principais:**
+- `llm-provider.ts`: ⭐ **NOVO** - Factory pattern para suportar múltiplos provedores de LLM
 - `scoring.ts`: Sistema de scoring com 5 critérios + cálculo de receita cessante
 - `prompts.ts`: Templates profissionais personalizados por tipo de problema
 
@@ -142,7 +175,9 @@ agentes/
 
 - **LangGraph**: Orquestração de fluxo de trabalho
 - **LangChain**: Framework para aplicações com LLMs
-- **Gemini AI**: Modelo de linguagem (Google)
+- **LLM Providers**:
+  - Google Gemini AI (padrão)
+  - OpenRouter (Claude, GPT-4, Llama, e outros)
 - **Serper.dev**: API de busca no Google Maps
 - **TypeScript**: Linguagem principal
 - **Zod**: Validação de schemas

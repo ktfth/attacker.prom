@@ -45,9 +45,13 @@ export interface AgentState {
 
 // --- Configuração ---
 
+export type LLMProvider = "google" | "openrouter";
+
 export interface Config {
   serperApiKey: string;
-  googleApiKey: string;
+  googleApiKey?: string;
+  openRouterApiKey?: string;
+  llmProvider: LLMProvider;
   modelName: string;
   temperature: number;
 }

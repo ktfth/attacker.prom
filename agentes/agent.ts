@@ -1,8 +1,8 @@
 import { StateGraph, END } from "@langchain/langgraph";
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { getConfig } from "./config";
 import { AgentState } from "./types";
 import { SearchService } from "./search.service";
+import { LLMProvider } from "./llm-provider";
 import {
   createResearchNode,
   createAnalysisNode,
@@ -22,7 +22,9 @@ async function main() {
   try {
     // --- 1. Validar e Carregar Configuração ---
     const config = getConfig();
-    console.log(`✅ Configuração carregada: Modelo ${config.modelName}`);
+    console.log(`✅ Configuração carregada:`);
+    console.log(`   Provedor: ${config.llmProvider}`);
+    console.log(`   Modelo: ${config.modelName}`);
 
     // --- 2. Validar Argumentos ---
     const query = process.argv[2];
@@ -34,10 +36,7 @@ async function main() {
 
     // --- 3. Inicializar Serviços ---
     const searchService = new SearchService(config.serperApiKey);
-    const model = new ChatGoogleGenerativeAI({
-      modelName: config.modelName,
-      temperature: config.temperature,
-    });
+    const model = LLMProvider.createModel(config);
 
     // --- 4. Criar Nós do Grafo ---
     const researchNode = createResearchNode(searchService);
