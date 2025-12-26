@@ -4,10 +4,11 @@ Sistema completo de identificação, análise e correção de falhas operacionai
 
 ## Visão Geral
 
-O **Attacker Prom** é um framework que combina estratégia de mercado, metodologia de auditoria e ferramentas de automação para identificar e corrigir vazamentos de receita em negócios. O sistema opera em duas frentes:
+O **Attacker Prom** é um framework que combina estratégia de mercado, metodologia de auditoria e ferramentas de automação para identificar e corrigir vazamentos de receita em negócios. O sistema opera em três frentes:
 
 1. **Metodologia Sniper**: Protocolos e playbooks para identificação manual de oportunidades
-2. **Sniper Agent**: Ferramenta de IA autônoma que automatiza a prospecção e análise
+2. **Sniper Agent (CLI)**: Ferramenta de IA autônoma que automatiza a prospecção e análise via linha de comando
+3. **Interface Web**: Dashboard interativo para análise visual e ações de resolução
 
 ### Filosofia
 
@@ -24,9 +25,14 @@ attacker.prom/
 ├── 03_Protocolo_Sniper.md               # Protocolo tático de execução
 ├── 04_Prompt_Auditor_Receita.md         # Template de prompts para IA
 ├── agentes/                              # Sniper Agent (automação com IA)
-│   ├── agent.ts                         # Agente principal
+│   ├── agent.ts                         # Agente principal (CLI)
 │   ├── scoring.ts                       # Sistema de pontuação
 │   ├── prompts.ts                       # Templates otimizados
+│   ├── web/                             # 🌐 Interface Web
+│   │   ├── app/                         # Next.js App Router
+│   │   ├── components/                  # Componentes React
+│   │   ├── lib/                         # Utilitários
+│   │   └── README.md                    # Documentação web
 │   └── ...                              # Demais arquivos do agente
 ├── contratos/                           # Templates de contratos
 ├── sniper/                              # Scripts e prompts táticos
@@ -117,6 +123,41 @@ Sistema autônomo que automatiza a prospecção e análise usando IA.
 
 **Ver documentação completa:** `agentes/README.md`
 
+### 5. Interface Web
+
+**Diretório:** `agentes/web/`
+
+Dashboard interativo para análise visual e ações de resolução diretamente do navegador.
+
+**Funcionalidades:**
+- Dashboard intuitivo com formulário de busca
+- Visualização em tempo real dos resultados
+- Score visual com badges de prioridade
+- Cálculo de perda financeira em destaque
+- Top 5 alvos priorizados
+- Ações integradas:
+  - Envio direto para WhatsApp
+  - Composição de email
+  - Cópia rápida de mensagens
+- Preview de mensagens antes do envio
+
+**Tecnologias:**
+- Next.js 14 (App Router)
+- React + TypeScript
+- TailwindCSS
+- API Routes (serverless)
+
+**Início Rápido:**
+```bash
+cd agentes/web
+npm install
+cp .env.example .env
+npm run dev
+# Acesse: http://localhost:3000
+```
+
+**Ver documentação completa:** `agentes/web/README.md`
+
 ## Instalação
 
 ### Pré-requisitos
@@ -182,6 +223,28 @@ bun run agent.ts "Clínicas de estética em Belo Horizonte"
 - Cálculo de perda financeira
 - Script WhatsApp pronto
 - Proposta de solução
+
+### Modo Interface Web
+
+```bash
+cd agentes/web
+
+# Instalar dependências
+npm install
+
+# Configurar .env
+cp .env.example .env
+# Editar com suas chaves de API
+
+# Iniciar servidor
+npm run dev
+```
+
+Acesse **http://localhost:3000** e:
+1. Digite o nicho e cidade
+2. Clique em "Iniciar Análise"
+3. Visualize resultados em tempo real
+4. Execute ações (WhatsApp, Email, Copiar)
 
 ### Validar Configuração
 
