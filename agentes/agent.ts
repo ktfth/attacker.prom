@@ -27,11 +27,20 @@ async function main() {
     console.log(`   Modelo: ${config.modelName}`);
 
     // --- 2. Validar Argumentos ---
-    const query = process.argv[2];
+    const args = process.argv.slice(2);
+    const focusMode = args.includes("--focus");
+    const query = args.filter((arg) => !arg.startsWith("--"))[0];
+
     if (!query) {
       console.error("❌ Uso: bun run agent.ts 'Nicho em Cidade'");
       console.error("   Exemplo: bun run agent.ts 'Restaurantes em São Paulo'");
+      console.error("\n   Modo Focus: bun run agent.ts 'Nome da Empresa Cidade' --focus");
+      console.error("   Exemplo: bun run agent.ts 'Inovar materiais de construção Perus' --focus");
       process.exit(1);
+    }
+
+    if (focusMode) {
+      console.log(`\n🎯 [MODO FOCUS] Análise detalhada de empresa específica ativada`);
     }
 
     // --- 3. Inicializar Serviços ---
@@ -40,7 +49,6 @@ async function main() {
 
     // --- 4. Criar Nós do Grafo ---
     const researchNode = createResearchNode(searchService);
-    const analysisNode = createAnalysisNode(model);
     const dossierNode = createDossierNode(model);
 
     // --- 5. Montar o Grafo de Trabalho ---
@@ -52,17 +60,27 @@ async function main() {
         final_dossier: { value: (x: string, y: string) => y ?? x },
         top_targets: { value: (x: any, y: any) => y ?? x },
         selected_score: { value: (x: any, y: any) => y ?? x },
+        focus_mode: { value: (x: boolean, y: boolean) => y ?? x },
       },
     });
 
     workflow.addNode("research", researchNode);
-    workflow.addNode("analyze", analysisNode);
     workflow.addNode("write_dossier", dossierNode);
 
-    workflow.setEntryPoint("research");
-    workflow.addEdge("research", "analyze");
-    workflow.addEdge("analyze", "write_dossier");
-    workflow.addEdge("write_dossier", END);
+    if (focusMode) {
+      // Modo focus: research -> write_dossier (pula análise comparativa)
+      workflow.setEntryPoint("research");
+      workflow.addEdge("research", "write_dossier");
+      workflow.addEdge("write_dossier", END);
+    } else {
+      // Modo normal: research -> analyze -> write_dossier
+      const analysisNode = createAnalysisNode(model);
+      workflow.addNode("analyze", analysisNode);
+      workflow.setEntryPoint("research");
+      workflow.addEdge("research", "analyze");
+      workflow.addEdge("analyze", "write_dossier");
+      workflow.addEdge("write_dossier", END);
+    }
 
     const app = workflow.compile();
 
@@ -70,7 +88,7 @@ async function main() {
     console.log(`\n🚀 [SNIPER AGENT] Iniciando análise...`);
     console.log(`📋 Query: "${query}"\n`);
 
-    const result = await app.invoke({ query });
+    const result = await app.invoke({ query, focus_mode: focusMode });
 
     // --- 7. Exibir Resultado ---
     console.log("\n" + "=".repeat(60));
