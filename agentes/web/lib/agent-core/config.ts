@@ -1,4 +1,7 @@
+import * as dotenv from "dotenv";
 import { Config, ConfigurationError, LLMProvider } from "./types";
+
+dotenv.config();
 
 /**
  * Valida e retorna a configuração do agente

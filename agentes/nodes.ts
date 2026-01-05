@@ -6,21 +6,13 @@ import { TargetScoring, TargetScore } from "./scoring";
 import { PromptTemplates } from "./prompts";
 
 /**
- * Estado estendido para passar dados entre nós
- */
-interface ExtendedAgentState extends AgentState {
-  top_targets?: TargetScore[];
-  selected_score?: TargetScore;
-}
-
-/**
  * Cria o nó de pesquisa (research)
  * Responsável por buscar dados reais e fazer scoring inicial
  */
 export function createResearchNode(searchService: SearchService) {
   return async (
-    state: ExtendedAgentState
-  ): Promise<Partial<ExtendedAgentState>> => {
+    state: AgentState
+  ): Promise<Partial<AgentState>> => {
     const isFocusMode = state.focus_mode || false;
 
     if (isFocusMode) {
@@ -29,7 +21,7 @@ export function createResearchNode(searchService: SearchService) {
       );
     } else {
       console.log(
-        `\n🔍 [SNIPER] Rastreando o Google Maps Real para: "${state.query}"...`
+        `\n🔍 [MESTRE] Rastreando o Google Maps Real para: "${state.query}"...`
       );
     }
 
@@ -74,45 +66,24 @@ export function createResearchNode(searchService: SearchService) {
         // Fazer scoring detalhado da empresa
         const targetScore = TargetScoring.scoreTarget(targetPlace);
 
-        console.log(`📊 ANÁLISE DE OPORTUNIDADES:`);
-        console.log(`   Score Total: ${targetScore.score}/100 (${targetScore.priority})`);
-        console.log(`   💰 Perda Mensal Estimada: R$ ${targetScore.estimatedMonthlyLoss.toLocaleString("pt-BR")}`);
-        console.log(`\n   🚨 PROBLEMAS IDENTIFICADOS (${targetScore.issues.length}):\n`);
-
-        targetScore.issues.forEach((issue, idx) => {
-          console.log(`   ${idx + 1}. ${issue.type} (Severidade: ${issue.severity}/10)`);
-          console.log(`      ${issue.description}`);
-          console.log(`      💡 ${issue.recommendation}\n`);
-        });
-
-        console.log(`✅ [MODO FOCUS] Análise detalhada concluída. Gerando dossiê de ataque...\n`);
+        console.log(`📊 ANÁLISE DE SAÚDE DIGITAL:`);
+        console.log(`   Nota: ${targetScore.score}/100 (${targetScore.priority})`);
+        
+        // Exibir problemas encontrados
+        if (targetScore.issues.length > 0) {
+           console.log(`   🚨 ${targetScore.issues.length} OPORTUNIDADES DE MELHORIA IDENTIFICADAS\n`);
+        }
 
         return {
           real_data: formattedData,
           top_targets: [targetScore],
           selected_score: targetScore,
-          selected_target: `ALVO SELECIONADO: ${targetPlace.title}\n\nDados completos analisados para dossiê de ataque.`,
+          selected_target: `ALVO SELECIONADO: ${targetPlace.title}\n\nDados completos analisados.`,
         };
       } else {
         // Modo Normal: Top 5 alvos
-        console.log(`📊 [SNIPER] Analisando e pontuando ${places.length} alvos...`);
+        console.log(`📊 [MESTRE] Analisando e comparando ${places.length} vizinhos...`);
         const topTargets = TargetScoring.getTopTargets(places, 5);
-
-        // Exibir resumo dos top alvos
-        console.log(`\n🎯 TOP 5 ALVOS IDENTIFICADOS:\n`);
-        topTargets.forEach((target, idx) => {
-          console.log(
-            `${idx + 1}. ${target.place.title} - Score: ${target.score}/100 (${target.priority})`
-          );
-          console.log(
-            `   💰 Perda Mensal: R$ ${target.estimatedMonthlyLoss.toLocaleString("pt-BR")}`
-          );
-          console.log(
-            `   🚨 Problemas: ${target.issues.map((i) => i.type).join(", ")}\n`
-          );
-        });
-
-        console.log(`✅ [SNIPER] Scoring concluído. Passando para análise LLM...\n`);
 
         return {
           real_data: formattedData,
@@ -142,13 +113,19 @@ export function createResearchNode(searchService: SearchService) {
 
 /**
  * Cria o nó de análise (analyze)
- * Usa LLM + scoring para selecionar o melhor alvo
+ * Usa LLM + scoring para analisar o cenário ou selecionar o melhor alvo
  */
 export function createAnalysisNode(model: BaseChatModel) {
   return async (
-    state: ExtendedAgentState
-  ): Promise<Partial<ExtendedAgentState>> => {
-    console.log(`\n🎯 [SNIPER] Análise LLM + Scoring Híbrido...`);
+    state: AgentState
+  ): Promise<Partial<AgentState>> => {
+    const isInvestigative = !state.focus_mode;
+    
+    if (isInvestigative) {
+      console.log(`\n🕵️ [INVESTIGADOR] Analisando o cenário competitivo local...`);
+    } else {
+      console.log(`\n🤔 [MESTRE] A inteligência artificial está analisando o negócio...`);
+    }
 
     // Verificar se há dados válidos
     try {
@@ -171,38 +148,30 @@ export function createAnalysisNode(model: BaseChatModel) {
       };
     }
 
-    // Usar o prompt otimizado
-    const prompt = PromptTemplates.getAnalysisPrompt(
+    // Usar o prompt otimizado (Investigação ou Seleção)
+    const prompt = PromptTemplates.getInvestigationPrompt(
       state.real_data,
       state.top_targets
     );
 
     try {
       const response = await model.invoke([new HumanMessage(prompt)]);
-      const selectedText = response.content as string;
+      const analysisText = response.content as string;
 
-      // Tentar identificar qual alvo foi selecionado para passar o score
+      // Tentar identificar qual alvo foi selecionado (para fins de detalhamento posterior)
       let selectedScore: TargetScore | undefined;
       for (const target of state.top_targets) {
-        if (selectedText.includes(target.place.title)) {
+        if (analysisText.includes(target.place.title)) {
           selectedScore = target;
           break;
         }
       }
 
-      console.log(`✅ [SNIPER] Alvo final selecionado pelo LLM.`);
-      if (selectedScore) {
-        console.log(
-          `   📌 ${selectedScore.place.title} (Score: ${selectedScore.score}/100)`
-        );
-        console.log(
-          `   💰 Impacto: R$ ${selectedScore.estimatedMonthlyLoss.toLocaleString("pt-BR")}/mês`
-        );
-      }
-
+      console.log(`✅ [MESTRE] Investigação concluída.`);
+      
       return {
-        selected_target: selectedText,
-        selected_score: selectedScore,
+        selected_target: analysisText,
+        selected_score: selectedScore || state.top_targets[0], // Fallback para o primeiro
       };
     } catch (error) {
       throw new AnalysisError(
@@ -221,66 +190,57 @@ export function createAnalysisNode(model: BaseChatModel) {
  */
 export function createDossierNode(model: BaseChatModel) {
   return async (
-    state: ExtendedAgentState
-  ): Promise<Partial<ExtendedAgentState>> => {
+    state: AgentState
+  ): Promise<Partial<AgentState>> => {
     const isFocusMode = state.focus_mode || false;
+    const intent = state.intent;
 
-    if (isFocusMode) {
-      console.log(`\n📝 [MODO FOCUS] Gerando Dossiê de Ataque Detalhado...`);
+    if (intent === 'CONTENT_CREATION') {
+        console.log(`\n🎨 [CRIATIVO] Criando posts para redes sociais...`);
+    } else if (isFocusMode) {
+      console.log(`\n📝 [MESTRE] Escrevendo o Plano de Ação Personalizado...`);
     } else {
-      console.log(`\n📝 [SNIPER] Gerando Dossiê Completo...`);
+      console.log(`\n📝 [MESTRE] Compilando relatório comparativo...`);
     }
 
     // Verificar se há um alvo válido
     if (state.selected_target.startsWith("ERRO:")) {
       return {
-        final_dossier: `## FALHA NA GERAÇÃO DE DOSSIÊ\n\n${state.selected_target}\n\nNão foi possível gerar o dossiê devido a erros na etapa anterior.`,
+        final_dossier: `## FALHA NA ANÁLISE\n\n${state.selected_target}\n\nNão foi possível gerar o material devido a erros na etapa anterior.`,
       };
     }
 
-    // Escolher prompt personalizado se tivermos o score
+    // Escolher prompt personalizado
     let prompt: string;
 
-    if (isFocusMode && state.selected_score) {
-      // Modo Focus: Dossiê super detalhado
+    if (intent === 'CONTENT_CREATION' && state.selected_score) {
+        prompt = PromptTemplates.getSocialMediaContentPrompt(state.selected_score);
+    } else if (isFocusMode && state.selected_score) {
+      // Modo Focus/Health Check: Plano de Crescimento
       prompt = PromptTemplates.getFocusModeDossierPrompt(state.selected_score);
-      console.log(`   🎯 Gerando dossiê de ataque com estratégia completa...`);
+    } else if (!isFocusMode) {
+      // MODO INVESTIGAÇÃO (LISTA)
+      // No modo normal/comparativo, o AnalysisNode já gerou um relatório de investigação.
+      // Podemos apenas retornar esse relatório ou refiná-lo.
+      // Para manter a coerência, vamos usar o selected_target que veio do AnalysisNode.
+      return {
+        final_dossier: state.selected_target + `\n\n---\n**Metadados da Investigação:**\n- Query: "${state.query}"\n- Data: ${new Date().toLocaleDateString("pt-BR")}`
+      };
     } else if (state.selected_score) {
-      // Identificar problema dominante
-      const dominantIssue =
-        state.selected_score.issues.length > 0
-          ? state.selected_score.issues[0].type
-          : "NO_WEBSITE";
-
-      prompt = PromptTemplates.getPersonalizedDossierPrompt(
-        dominantIssue,
-        state.selected_score
-      );
-
-      console.log(
-        `   🎯 Usando template personalizado para: ${dominantIssue}`
-      );
+       prompt = PromptTemplates.getDossierPrompt(state.selected_target, state.selected_score);
     } else {
-      // Fallback para prompt genérico
-      prompt = PromptTemplates.getDossierPrompt(state.selected_target);
+       prompt = PromptTemplates.getDossierPrompt(state.selected_target);
     }
 
     try {
       const response = await model.invoke([new HumanMessage(prompt)]);
 
-      if (isFocusMode) {
-        console.log(`✅ [MODO FOCUS] Dossiê de ataque gerado com sucesso.`);
-      } else {
-        console.log(`✅ [SNIPER] Dossiê gerado com sucesso.`);
-      }
+      console.log(`✅ [MESTRE] Relatório gerado com sucesso.`);
 
       // Adicionar footer com metadados
       const footer = `\n\n---\n\n**Metadados da Análise:**
 - Query: "${state.query}"
-- Modo: ${isFocusMode ? "FOCUS (Empresa Específica)" : "NORMAL (Comparativo)"}
-- Alvos Analisados: ${state.top_targets?.length || "N/A"}
-- Score do Alvo: ${state.selected_score?.score || "N/A"}/100
-- Prioridade: ${state.selected_score?.priority || "N/A"}
+- Modo: ${intent || (isFocusMode ? "FOCUS" : "NORMAL")}
 - Data: ${new Date().toLocaleDateString("pt-BR")}
 `;
 
@@ -297,3 +257,4 @@ export function createDossierNode(model: BaseChatModel) {
     }
   };
 }
+

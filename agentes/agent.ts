@@ -8,40 +8,45 @@ import {
   createAnalysisNode,
   createDossierNode,
 } from "./nodes";
-
-/**
- * Sniper Agent - Sistema de Análise de Oportunidades
- *
- * Arquitetura modular baseada em LangGraph com três nós:
- * 1. Research - Coleta dados reais do Google Maps
- * 2. Analysis - Analisa e seleciona alvos prioritários
- * 3. Dossier - Gera relatório de intervenção
- */
+import { showMainMenu, getTargetQuery } from "./cli/menu";
+import { styles } from "./cli/styles";
 
 async function main() {
   try {
     // --- 1. Validar e Carregar Configuração ---
     const config = getConfig();
-    console.log(`✅ Configuração carregada:`);
-    console.log(`   Provedor: ${config.llmProvider}`);
-    console.log(`   Modelo: ${config.modelName}`);
-
-    // --- 2. Validar Argumentos ---
+    
+    // --- 2. Interface Interativa (TUI) ---
+    // Verifica se passou argumentos diretos (modo legado/automação)
     const args = process.argv.slice(2);
-    const focusMode = args.includes("--focus");
-    const query = args.filter((arg) => !arg.startsWith("--"))[0];
+    let query = args.filter((arg) => !arg.startsWith("--"))[0];
+    let focusMode = args.includes("--focus");
+    let intent: any = undefined;
 
     if (!query) {
-      console.error("❌ Uso: bun run agent.ts 'Nicho em Cidade'");
-      console.error("   Exemplo: bun run agent.ts 'Restaurantes em São Paulo'");
-      console.error("\n   Modo Focus: bun run agent.ts 'Nome da Empresa Cidade' --focus");
-      console.error("   Exemplo: bun run agent.ts 'Inovar materiais de construção Perus' --focus");
+      // Modo Interativo
+      intent = await showMainMenu();
+      
+      if (intent === 'EXIT') {
+        console.log(styles.info('Até logo! Sucesso nos negócios.'));
+        process.exit(0);
+      }
+
+      query = await getTargetQuery(intent);
+      
+      // Mapeando intenções para modos
+      if (intent === 'HEALTH_CHECK' || intent === 'CONTENT_CREATION') {
+        focusMode = true;
+      }
+      // COMPETITOR_SPY e INVESTIGATION_POST usam modo normal (comparativo/investigativo)
+    }
+
+    if (!query) {
+      console.log(styles.error('❌ Preciso de um nome ou nicho para começar.'));
       process.exit(1);
     }
 
-    if (focusMode) {
-      console.log(`\n🎯 [MODO FOCUS] Análise detalhada de empresa específica ativada`);
-    }
+    console.log(styles.highlight(`\n🚀 Iniciando missão: "${query}"...`));
 
     // --- 3. Inicializar Serviços ---
     const searchService = new SearchService(config.serperApiKey);
@@ -60,7 +65,8 @@ async function main() {
         final_dossier: { value: (x: string, y: string) => y ?? x },
         top_targets: { value: (x: any, y: any) => y ?? x },
         selected_score: { value: (x: any, y: any) => y ?? x },
-        focus_mode: { value: (x: boolean, y: boolean) => y ?? x },
+        focus_mode: { value: (x?: boolean, y?: boolean) => y ?? x ?? false },
+        intent: { value: (x: any, y: any) => y ?? x },
       },
     });
 
@@ -68,51 +74,43 @@ async function main() {
     workflow.addNode("write_dossier", dossierNode);
 
     if (focusMode) {
-      // Modo focus: research -> write_dossier (pula análise comparativa)
-      workflow.setEntryPoint("research");
-      workflow.addEdge("research", "write_dossier");
-      workflow.addEdge("write_dossier", END);
+      workflow.setEntryPoint("research" as any);
+      workflow.addEdge("research" as any, "write_dossier" as any);
+      workflow.addEdge("write_dossier" as any, END);
     } else {
-      // Modo normal: research -> analyze -> write_dossier
       const analysisNode = createAnalysisNode(model);
-      workflow.addNode("analyze", analysisNode);
-      workflow.setEntryPoint("research");
-      workflow.addEdge("research", "analyze");
-      workflow.addEdge("analyze", "write_dossier");
-      workflow.addEdge("write_dossier", END);
+      workflow.addNode("analyze" as any, analysisNode);
+      workflow.setEntryPoint("research" as any);
+      workflow.addEdge("research" as any, "analyze" as any);
+      workflow.addEdge("analyze" as any, "write_dossier" as any);
+      workflow.addEdge("write_dossier" as any, END);
     }
 
     const app = workflow.compile();
 
     // --- 6. Executar o Agente ---
-    console.log(`\n🚀 [SNIPER AGENT] Iniciando análise...`);
-    console.log(`📋 Query: "${query}"\n`);
-
-    const result = await app.invoke({ query, focus_mode: focusMode });
+    const result = await app.invoke({ query, focus_mode: focusMode, intent });
 
     // --- 7. Exibir Resultado ---
     console.log("\n" + "=".repeat(60));
-    console.log("🎯 DOSSIÊ GERADO COM DADOS REAIS");
+    console.log("🎯 RELATÓRIO DO MESTRE");
     console.log("=".repeat(60) + "\n");
     console.log(result.final_dossier);
     console.log("\n" + "=".repeat(60));
-    console.log("✅ Execução concluída com sucesso!");
+    console.log(styles.success("✅ Missão cumprida!"));
   } catch (error) {
-    console.error("\n" + "=".repeat(60));
-    console.error("❌ ERRO FATAL");
-    console.error("=".repeat(60));
-
-    if (error instanceof Error) {
-      console.error(`\nTipo: ${error.name}`);
-      console.error(`Mensagem: ${error.message}`);
-
-      if (error.stack) {
-        console.error(`\nStack Trace:\n${error.stack}`);
-      }
+    if (error instanceof Error && error.message.includes("API Key")) {
+        console.error(styles.error("\n❌ ERRO DE CONFIGURAÇÃO:"));
+        console.error(styles.warning("Parece que suas chaves de API não estão configuradas."));
+        console.error("Edite o arquivo .env com suas chaves do Google Gemini e Serper.dev.");
     } else {
-      console.error(`\nErro desconhecido: ${String(error)}`);
+        console.error(styles.error("\n❌ ERRO FATAL"));
+        if (error instanceof Error) {
+            console.error(error.message);
+        } else {
+            console.error(String(error));
+        }
     }
-
     process.exit(1);
   }
 }

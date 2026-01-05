@@ -59,14 +59,14 @@ export class SniperAgentWrapper {
       },
     });
 
-    workflow.addNode("research", researchNode);
-    workflow.addNode("analyze", analysisNode);
-    workflow.addNode("write_dossier", dossierNode);
+    workflow.addNode("research" as any, researchNode);
+    workflow.addNode("analyze" as any, analysisNode);
+    workflow.addNode("write_dossier" as any, dossierNode);
 
-    workflow.setEntryPoint("research");
-    workflow.addEdge("research", "analyze");
-    workflow.addEdge("analyze", "write_dossier");
-    workflow.addEdge("write_dossier", END);
+    workflow.setEntryPoint("research" as any);
+    workflow.addEdge("research" as any, "analyze" as any);
+    workflow.addEdge("analyze" as any, "write_dossier" as any);
+    workflow.addEdge("write_dossier" as any, END);
 
     this.app = workflow.compile();
   }
@@ -74,13 +74,14 @@ export class SniperAgentWrapper {
   /**
    * Executa análise para uma query
    */
-  async analyze(query: string): Promise<AnalysisResult> {
+  async analyze(query: string, intent: string = 'HEALTH_CHECK'): Promise<AnalysisResult> {
     try {
       if (!this.app) {
         await this.initialize();
       }
 
-      const result = await this.app.invoke({ query });
+      const focusMode = intent === 'HEALTH_CHECK' || intent === 'CONTENT_CREATION';
+      const result = await this.app.invoke({ query, focus_mode: focusMode, intent });
 
       return {
         success: true,

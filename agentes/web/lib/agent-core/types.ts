@@ -41,6 +41,8 @@ export interface AgentState {
   final_dossier: string;
   top_targets?: any[]; // TargetScore[] - any para evitar dependência circular
   selected_score?: any; // TargetScore
+  focus_mode?: boolean;
+  intent?: 'HEALTH_CHECK' | 'COMPETITOR_SPY' | 'CONTENT_CREATION' | 'EXIT';
 }
 
 // --- Configuração ---
